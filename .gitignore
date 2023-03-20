@@ -1,0 +1,6 @@
+*.pyc
+*.egg-info
+*.csv
+test_config.yaml
+*.ipynb
+.vscode
