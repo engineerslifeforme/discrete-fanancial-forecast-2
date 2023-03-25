@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import shutil
 
 import yaml
 import pandas as pd
@@ -11,8 +12,12 @@ import jinja2
 from financial_planner import BankYaml, AccountYaml, DATE_TYPE_STR_MAP, Simulation, parse_date
 
 environment = jinja2.Environment()
+RESULTS_DIR = Path('results')
 
 def main():
+    if RESULTS_DIR.exists():
+        shutil.rmtree(RESULTS_DIR)
+    RESULTS_DIR.mkdir()
     yaml_path, start_date, end_date = parse_cli()
     filled_yaml_text = fill_placeholders(yaml_path.read_text())
     simulation = create_simulation(filled_yaml_text)
@@ -20,19 +25,20 @@ def main():
     print(simulation.bank.state_log[-1])
     transactions = pd.DataFrame([log.to_dict() for log in simulation.bank.transaction_log])
     transactions['date'] = pd.to_datetime(transactions['date'])
-    transactions.to_csv('transactions.csv')
+    transactions.to_csv(RESULTS_DIR / 'transactions.csv')
     transactions.set_index('date')\
+                .drop('title', axis='columns')\
                 .groupby([pd.Grouper(freq="M"), 'destination'])\
                 .sum()\
                 .reset_index(drop=False)\
-                .to_csv('monthly_transactions.csv')
+                .to_csv(RESULTS_DIR / 'monthly_transactions.csv')
     state = pd.DataFrame(simulation.bank.state_log)
     state['date'] = pd.to_datetime(state['date'])
     state.set_index('date')\
          .groupby([pd.Grouper(freq="M"), 'account'])\
          .tail(1)\
          .reset_index(drop=False)\
-         .to_csv('monthly_account_state.csv')
+         .to_csv(RESULTS_DIR / 'monthly_account_state.csv')
 
 def fill_placeholders(yaml_text: str) -> str:
     if '---' not in yaml_text:
