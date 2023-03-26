@@ -12,33 +12,33 @@ import jinja2
 from financial_planner import BankYaml, AccountYaml, DATE_TYPE_STR_MAP, Simulation, parse_date
 
 environment = jinja2.Environment()
-RESULTS_DIR = Path('results')
 
 def main():
-    if RESULTS_DIR.exists():
-        shutil.rmtree(RESULTS_DIR)
-    RESULTS_DIR.mkdir()
     yaml_path, start_date, end_date = parse_cli()
+    results_dir = Path(f"{yaml_path.stem}_results")
+    if results_dir.exists():
+        shutil.rmtree(results_dir)
+    results_dir.mkdir()
     filled_yaml_text = fill_placeholders(yaml_path.read_text())
     simulation = create_simulation(filled_yaml_text)
     simulation.run(start_date, end_date, show_progress=True)
     print(simulation.bank.state_log[-1])
     transactions = pd.DataFrame([log.to_dict() for log in simulation.bank.transaction_log])
     transactions['date'] = pd.to_datetime(transactions['date'])
-    transactions.to_csv(RESULTS_DIR / 'transactions.csv')
+    transactions.to_csv(results_dir / 'transactions.csv')
     transactions.set_index('date')\
                 .drop('title', axis='columns')\
                 .groupby([pd.Grouper(freq="M"), 'destination'])\
                 .sum()\
                 .reset_index(drop=False)\
-                .to_csv(RESULTS_DIR / 'monthly_transactions.csv')
+                .to_csv(results_dir / 'monthly_transactions.csv')
     state = pd.DataFrame(simulation.bank.state_log)
     state['date'] = pd.to_datetime(state['date'])
     state.set_index('date')\
          .groupby([pd.Grouper(freq="M"), 'account'])\
          .tail(1)\
          .reset_index(drop=False)\
-         .to_csv(RESULTS_DIR / 'monthly_account_state.csv')
+         .to_csv(results_dir / 'monthly_account_state.csv')
 
 def fill_placeholders(yaml_text: str) -> str:
     if '---' not in yaml_text:
@@ -51,6 +51,11 @@ def create_simulation(yaml_text: str) -> Simulation:
     config_data = yaml.load(yaml_text, Loader=yaml.BaseLoader)
     transfer_data = {}
     account_list = []
+    error = "At least 1 account must be present in YAML config"
+    try:
+        assert(len(config_data['accounts']) > 0), error
+    except TypeError: # if not present in YAML
+        raise(AssertionError(error))
     for entry in config_data['accounts']:
         if 'transfers' in entry:
             transfer_data[entry['name']] = entry['transfers']
