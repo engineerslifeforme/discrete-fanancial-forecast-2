@@ -45,7 +45,7 @@ class MortgagePaymentTransaction(MonthlyTransaction):
     def calculate_payoff(remainder: Decimal) -> Decimal:
         return remainder
 
-    def current_value(self, date: BD.BeautifulDate) -> Decimal:
+    def current_value(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
         if self.remaining_balance <= ZERO:
             return ZERO
         if self.remaining_balance > self.payment:
@@ -57,9 +57,9 @@ class MortgagePaymentTransaction(MonthlyTransaction):
             return value
 
 
-    def _get_active_cost(self, date: BD.BeautifulDate) -> Decimal:
+    def _get_active_cost(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
         if date.day == self.start_date.day:
-            return self.current_value(date)
+            return self.current_value(date, relative_date)
         else:
             return ZERO
 

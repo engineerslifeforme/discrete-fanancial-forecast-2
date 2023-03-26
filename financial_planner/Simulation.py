@@ -27,7 +27,7 @@ class Simulation:
         for day_index in tqdm(range(total_days)):
             date = start_date + (day_index * BD.days)
             try:
-                self.bank.process_date(date)
+                self.bank.process_date(date, start_date)
             except Bankrupt:
                 print(f"Went bankrupt on {date}!")
                 break

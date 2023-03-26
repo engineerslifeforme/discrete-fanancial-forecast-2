@@ -32,10 +32,10 @@ class Account:
         return (self.balance * self.default_interest_rate.get_rate(time_units))\
                 .quantize(CENTS)
 
-    def process_transactions(self, date: BD.BeautifulDate) -> list:
+    def process_transactions(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> list:
         transaction_list = []
         for transaction in self.transactions:
-            cost = transaction.get_cost(date)
+            cost = transaction.get_cost(date, relative_date)
             if cost == ZERO:
                 continue
             transaction_list.append(self.execute_transaction(

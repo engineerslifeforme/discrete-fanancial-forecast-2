@@ -60,20 +60,20 @@ class TransactionPrototype:
             not_active |= date > self.end_date
         return not not_active
 
-    def get_cost(self, date: BD.BeautifulDate) -> Decimal:
+    def get_cost(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
         if not self.active(date):
             return ZERO
         else:
-            return self._get_active_cost(date)
+            return self._get_active_cost(date, relative_date)
 
-    def current_value(self, date: BD.BeautifulDate) -> Decimal:
-        return (self.amount * (1 + self.interest_rate.day * (date - self.start_date).days)).quantize(CENTS)
+    def current_value(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
+        return (self.amount * (1 + self.interest_rate.day * (date - relative_date).days)).quantize(CENTS)
 
 class DailyTransaction(TransactionPrototype):
 
-    def _get_active_cost(self, date: BD.BeautifulDate) -> Decimal:        
+    def _get_active_cost(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:        
         if (date - self.start_date).days % self.every_x_periods == 0:
-            return self.current_value(date)
+            return self.current_value(date, relative_date)
         else:
             return ZERO
 
@@ -93,10 +93,10 @@ class MonthlyTransaction(TransactionPrototype):
         super().__init__(*args, **kwargs)
         assert(self.start_date.day <= 28), f"Monthly transactions must start on day 1-28, {self.name} starts on {self.start_date.day}"
 
-    def _get_active_cost(self, date: BD.BeautifulDate) -> Decimal:
+    def _get_active_cost(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
         if date.day == self.start_date.day:
             if (month_int(date) - month_int(self.start_date)) % self.every_x_periods == 0:
-                return self.current_value(date)
+                return self.current_value(date, relative_date)
             else:
                 return ZERO
         else:

@@ -70,9 +70,9 @@ class Bank:
                 return account
         raise Bankrupt("No more accounts with > $0 balance.")
     
-    def process_date(self, date: BD.BeautifulDate):
+    def process_date(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate):
         for account in self.accounts:
-            self.transaction_log.extend(account.process_transactions(date))
+            self.transaction_log.extend(account.process_transactions(date, relative_date))
             while account.balance < ZERO and not account.negative_balance_allowed:
                 withdraw_account = self.find_next_account(exclude=account)
                 description = f"{account.name} Low Balance Transfer"
