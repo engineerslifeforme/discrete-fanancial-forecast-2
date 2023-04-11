@@ -32,5 +32,10 @@ class Simulation:
                 print(f"Went bankrupt on {date}!")
                 break
             self.bank.mature(date)
+        return {
+            'start_date': str(start_date),
+            'end_date': str(end_date),
+            'bank': self.bank.to_dict(),
+        }
             
             

@@ -22,12 +22,21 @@ class Mortgage(Debt):
 
 
 class MortgagePaymentTransaction(MonthlyTransaction):
+    subtype = 'mortgage_payment'
 
     def __init__(self, loan_amount: Decimal, remaining_balance: Decimal, terms: int, extra_principal: Decimal = ZERO, **kwargs) -> None:
         super().__init__(amount=ZERO, **kwargs)
         assert(self.end_date is None), f"Mortgages cannot have an end date ({self.name})"
         self.remaining_balance = Decimal(remaining_balance)
         self.payment = compute_payment(Decimal(loan_amount), self.interest_rate.month, int(terms)) + Decimal(extra_principal)
+
+    def to_dict(self):
+        data = super().to_dict()
+        data.update({
+            'remaining_balance': str(self.remaining_balance),
+            'payment': str(self.payment),
+        })
+        return data
 
     @property
     def interest_payment(self) -> Decimal:
@@ -64,6 +73,7 @@ class MortgagePaymentTransaction(MonthlyTransaction):
             return ZERO
 
 class MortgagePrincipal(MortgagePaymentTransaction):
+    subtype = 'mortgage_principal'
 
     @property
     def return_value(self) -> Decimal:

@@ -5,16 +5,25 @@ from decimal import Decimal
 import beautiful_date as BD
 import pandas as pd
 
-from financial_planner.common import ZERO, CENTS
+from financial_planner.common import ZERO, CENTS, NEGATIVE_ONE
 from financial_planner.InterestRate import InterestRate
 from financial_planner.DateUnit import DateUnit
 from financial_planner.Transaction import TransactionLog
 from financial_planner.yaml_support import parse_transaction_dict, tranlate_transaction
+from financial_planner.TaxRate import ConstantTaxRate, tax_creator, TaxRatePrototype
 
 class Account:
     negative_balance_allowed = False
+    account_type = 'Account'
 
-    def __init__(self, name: str = None, interest_rate = 0.0, balance = ZERO, transactions: list = None, allow_auto_withdrawl: bool = True) -> None:
+    def __init__(
+            self, 
+            name: str = None, 
+            interest_rate = 0.0, 
+            balance = ZERO, 
+            transactions: list = None, 
+            allow_auto_withdrawl: bool = True,
+            withdrawal_tax_rate: TaxRatePrototype = None) -> None:
         assert(name is not None), "All accounts must have a name!"
         self.name = name
         self.balance = Decimal(balance).quantize(CENTS)
@@ -27,7 +36,24 @@ class Account:
             self.allow_auto_withdrawl = allow_auto_withdrawl
         else:
             self.allow_auto_withdrawl = allow_auto_withdrawl.lower == "true"
+        if withdrawal_tax_rate is None:
+            self.withdrawal_tax_rate = ConstantTaxRate()
+        else:
+            self.withdrawal_tax_rate = withdrawal_tax_rate
 
+    def to_dict(self) -> dict:
+        return {
+            'name': self.name,
+            'type': 'account',
+            'subtype': self.account_type,
+            'negative_balance_allowed': self.negative_balance_allowed,
+            'interest_rate': self.default_interest_rate.to_dict(),
+            'balance': str(self.balance),
+            'allow_auto_withdrawal': self.allow_auto_withdrawl,
+            'transactions': [t.to_dict() for t in self.transactions],
+            'withdrawal_tax_rate': self.withdrawal_tax_rate.to_dict(),
+        }
+    
     def calculate_interest(self, time_units: DateUnit) -> Decimal:
         return (self.balance * self.default_interest_rate.get_rate(time_units))\
                 .quantize(CENTS)
@@ -44,6 +70,14 @@ class Account:
                 self.name,
                 date,
             ))
+            taxes = transaction.get_tax(date, cost) * NEGATIVE_ONE
+            if taxes > ZERO:
+                transaction_list.append(self.execute_transaction(
+                    taxes,
+                    transaction.name + " Tax",
+                    self.name,
+                    date,
+                ))
             
         return transaction_list
 
@@ -59,8 +93,12 @@ class Account:
 
 class Debt(Account):
     negative_balance_allowed = True
+    account_type = 'Debt'
 
-class AccountYaml(Account):
+class RetirementAccount(Account):
+    account_type = 'Retirement Account'
+
+class YamlAdapter:
 
     def __init__(self, parsed_yaml_data: dict) -> None:        
         
@@ -80,5 +118,14 @@ class AccountYaml(Account):
             del(parsed_yaml_data['external_transactions'])
         parsed_yaml_data['transactions'].extend(transaction_list)
         
-
+        if 'withdrawal_tax_rate' in parsed_yaml_data:
+            parsed_yaml_data['withdrawal_tax_rate'] = tax_creator(parsed_yaml_data['withdrawal_tax_rate'])
         super().__init__(**parsed_yaml_data)
+
+class AccountYaml(YamlAdapter, Account):
+    pass
+
+class RetirementYaml(YamlAdapter, RetirementAccount):
+    pass
+
+    

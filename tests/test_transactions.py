@@ -3,6 +3,7 @@ from decimal import Decimal
 from beautiful_date import *
 
 from financial_planner import DailyTransaction, MonthlyTransaction, ZERO, YearlyTransaction
+from financial_planner.TaxRate import ConstantTaxRate, IncomeTaxRate
 
 def test_amount_format():
     # Test different versions of amount
@@ -39,5 +40,19 @@ def test_interest_rate():
 
 def test_start_date():
     yearly = YearlyTransaction('a', 5, start_date=15/Dec/2023)
+
+def test_tax_rate():
+    amount = Decimal("100.00")
+    tax_rate = Decimal("0.10")
+    monthly = MonthlyTransaction('a', amount, tax_rate=ConstantTaxRate(tax_rate))
+    cost = monthly.get_cost(D.today(), D.today())
+    taxes = monthly.get_tax(D.today(), cost)
+    assert(taxes == amount * tax_rate)
+
+    monthly = MonthlyTransaction('a', amount, tax_rate=IncomeTaxRate())
+    cost = monthly.get_cost(D.today(), D.today())
+    taxes = monthly.get_tax(D.today(), cost)
+    assert(taxes == ZERO)
+
 
     

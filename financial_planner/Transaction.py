@@ -5,6 +5,7 @@ import beautiful_date as BD
 
 from financial_planner.InterestRate import InterestRate
 from financial_planner.common import CENTS, ZERO, month_int, parse_date
+from financial_planner.TaxRate import TaxRatePrototype, ConstantTaxRate
 
 @dataclass
 class TransactionLog:
@@ -24,6 +25,7 @@ class TransactionLog:
         }
 
 class TransactionPrototype:
+    subtype = 'transaction'
 
     def __init__(
         self,
@@ -32,7 +34,8 @@ class TransactionPrototype:
         interest_rate = None,
         start_date = None,
         end_date = None,
-        every_x_periods: int = 1) -> None:
+        every_x_periods: int = 1,
+        tax_rate: TaxRatePrototype = None) -> None:
         assert(name is not None), "All transactions must have a name"
         assert(amount is not None), "All transactions must have an amount"
         self.name = name
@@ -53,6 +56,22 @@ class TransactionPrototype:
             if type(end_date) != BD.BeautifulDate:
                 self.end_date = parse_date(end_date)
         self.every_x_periods = every_x_periods
+        if tax_rate is None:
+            self.tax_rate = ConstantTaxRate()
+        else:
+            self.tax_rate = tax_rate
+
+    def to_dict(self) -> dict:
+        return {
+            'type': 'transaction',
+            'subtype': self.subtype,
+            'name': self.name,
+            'amount': str(self.amount),
+            'interest_rate': self.interest_rate.to_dict(),
+            'start_date': str(self.start_date),
+            'end_date': str(self.end_date),
+            'every_x_periods': self.every_x_periods,
+        }
     
     def active(self, date) -> bool:
         not_active = date < self.start_date
@@ -66,10 +85,14 @@ class TransactionPrototype:
         else:
             return self._get_active_cost(date, relative_date)
 
+    def get_tax(self, date: BD.BeautifulDate, taxed_amount: Decimal) -> Decimal:
+        return self.tax_rate.get_additional_taxes(taxed_amount, date)
+
     def current_value(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:
         return (self.amount * (1 + self.interest_rate.day * (date - relative_date).days)).quantize(CENTS)
 
 class DailyTransaction(TransactionPrototype):
+    subtype = 'daily'
 
     def _get_active_cost(self, date: BD.BeautifulDate, relative_date: BD.BeautifulDate) -> Decimal:        
         if (date - self.start_date).days % self.every_x_periods == 0:
@@ -78,16 +101,19 @@ class DailyTransaction(TransactionPrototype):
             return ZERO
 
 class WeeklyTransaction(DailyTransaction):
+    subtype = 'weekly'
 
     def __init__(self, *args, every_x_periods: int = 1, **kwargs) -> None:
         super().__init__(*args, every_x_periods=every_x_periods*7, **kwargs)
 
 class BiWeeklyTransaction(WeeklyTransaction):
+    subtype = 'biweekly'
 
     def __init__(self, *args, every_x_periods: int = 1, **kwargs) -> None:
         super().__init__(*args, every_x_periods=every_x_periods*2, **kwargs)
 
 class MonthlyTransaction(TransactionPrototype):
+    subtype = 'monthly'
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -103,6 +129,7 @@ class MonthlyTransaction(TransactionPrototype):
             return ZERO
 
 class YearlyTransaction(MonthlyTransaction):
+    subtype = 'yearly'
 
     def __init__(self, *args, every_x_periods: int = 1, **kwargs) -> None:
         super().__init__(*args, every_x_periods=every_x_periods*12, **kwargs)

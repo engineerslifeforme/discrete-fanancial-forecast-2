@@ -7,6 +7,12 @@ class InterestRate:
     def __init__(self, rate):
         self.rate = Decimal(rate)
 
+    def to_dict(self) -> dict:
+        return {
+            'type': 'interest_rate',
+            'rate': str(self.rate),
+        }
+
     @property
     def year(self):
         return self.rate
