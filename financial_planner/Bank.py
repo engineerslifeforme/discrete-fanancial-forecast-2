@@ -7,7 +7,6 @@ import beautiful_date as BD
 
 from financial_planner.DateUnit import DateUnit, get_date_increment
 from financial_planner.Transaction import TransactionLog
-from financial_planner.yaml_support import parse_transaction_dict
 from financial_planner.Account import Account
 from financial_planner.InterestRate import InterestRate
 from financial_planner.Mortgage import MortgagePrincipal, MortgagePaymentTransaction, Mortgage
@@ -157,20 +156,3 @@ class Bank:
             name=f"{name} Mortgage Payment", 
             **kwargs
         ))
-
-
-class BankYaml(Bank):
-
-    def allocate_transfers(self, transfer_data: dict):
-        for destination_name, transaction_data in transfer_data.items():
-            for transaction, source in parse_transaction_dict(transaction_data):
-                self.account_map[destination_name].transactions.append(transaction)
-                opposite = deepcopy(transaction)
-                opposite.amount *= Decimal("-1")
-                self.account_map[source].transactions.append(opposite)
-
-    def allocate_mortgages(self, mortgage_list: list):
-        for mortgage_data in mortgage_list:
-            mortgage_data['paid_from'] = self.account_map[mortgage_data['paid_from']]
-            self.create_mortgage(**mortgage_data)
-

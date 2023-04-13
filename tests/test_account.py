@@ -2,32 +2,22 @@
 
 from decimal import Decimal
 
-from financial_planner import Account, AccountYaml
-from financial_planner import DateUnit
+from beautiful_date import *
+
+from financial_planner import Account
+from financial_planner import MonthlyTransaction
+from financial_planner.TaxRate import IncomeTaxRate
 
 def test_account():
     starting_balance = Decimal("100.00")
     account = Account('a', balance=starting_balance)
     assert(account.balance == starting_balance)
 
-def test_account_yaml():
-    account = AccountYaml({
-        'name': 'a',
-        'balance': '5.00'
-    })
-    assert(account.name == 'a')
-    assert(account.balance == Decimal("5.00"))
-
-    account = AccountYaml({
-        'name': 'a',
-        'transactions': {
-            'monthly_income': [
-                {
-                    'name': 'b',
-                    'amount': '2.00',
-                }
-            ]
-        }
-    })
-    assert(len(account.transactions) == 1)
-    assert(account.transactions[0].name == 'b')
+def test_account_taxed_transactions():
+    starting_balance = Decimal("0.00")
+    transaction_amount = Decimal("23000.00")
+    acc = Account('a', balance=starting_balance, transactions=[
+        MonthlyTransaction('a', transaction_amount, tax_rate=IncomeTaxRate())
+    ])
+    acc.process_transactions(D.today(), D.today())
+    assert(acc.balance == (transaction_amount - Decimal("120.00")))

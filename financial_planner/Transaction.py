@@ -71,6 +71,7 @@ class TransactionPrototype:
             'start_date': str(self.start_date),
             'end_date': str(self.end_date),
             'every_x_periods': self.every_x_periods,
+            'tax_rate': self.tax_rate.to_dict(),
         }
     
     def active(self, date) -> bool:
@@ -133,5 +134,12 @@ class YearlyTransaction(MonthlyTransaction):
 
     def __init__(self, *args, every_x_periods: int = 1, **kwargs) -> None:
         super().__init__(*args, every_x_periods=every_x_periods*12, **kwargs)
+
+TRANSACTION_MAP = {Transaction.subtype: Transaction for Transaction in [
+    DailyTransaction,
+    BiWeeklyTransaction,
+    MonthlyTransaction,
+    YearlyTransaction,
+]}
 
 

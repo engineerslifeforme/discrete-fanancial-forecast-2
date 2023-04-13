@@ -9,7 +9,6 @@ from financial_planner.common import ZERO, CENTS, NEGATIVE_ONE
 from financial_planner.InterestRate import InterestRate
 from financial_planner.DateUnit import DateUnit
 from financial_planner.Transaction import TransactionLog
-from financial_planner.yaml_support import parse_transaction_dict, tranlate_transaction
 from financial_planner.TaxRate import ConstantTaxRate, tax_creator, TaxRatePrototype
 
 class Account:
@@ -71,7 +70,7 @@ class Account:
                 date,
             ))
             taxes = transaction.get_tax(date, cost) * NEGATIVE_ONE
-            if taxes > ZERO:
+            if taxes != ZERO:
                 transaction_list.append(self.execute_transaction(
                     taxes,
                     transaction.name + " Tax",
@@ -98,34 +97,3 @@ class Debt(Account):
 class RetirementAccount(Account):
     account_type = 'Retirement Account'
 
-class YamlAdapter:
-
-    def __init__(self, parsed_yaml_data: dict) -> None:        
-        
-        transaction_data = parsed_yaml_data.get('transactions', {})
-        parsed_yaml_data['transactions'] = [transaction for transaction, _ in parse_transaction_dict(transaction_data, income_vs_expense_processing=True)]
-
-        transaction_list = []
-        for external_source_info in parsed_yaml_data.get('external_transactions', []):
-            external_data = pd.read_csv(external_source_info['path'], dtype=str)
-            del(external_source_info['path'])
-            for entry in external_data.to_dict(orient='records'):
-                entry.update(external_source_info)
-                transaction_list.append(tranlate_transaction(
-                    entry,
-                )[0])
-        if len(transaction_list) > 0:
-            del(parsed_yaml_data['external_transactions'])
-        parsed_yaml_data['transactions'].extend(transaction_list)
-        
-        if 'withdrawal_tax_rate' in parsed_yaml_data:
-            parsed_yaml_data['withdrawal_tax_rate'] = tax_creator(parsed_yaml_data['withdrawal_tax_rate'])
-        super().__init__(**parsed_yaml_data)
-
-class AccountYaml(YamlAdapter, Account):
-    pass
-
-class RetirementYaml(YamlAdapter, RetirementAccount):
-    pass
-
-    

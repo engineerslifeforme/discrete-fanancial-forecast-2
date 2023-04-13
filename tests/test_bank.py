@@ -2,8 +2,7 @@ from decimal import Decimal
 
 import beautiful_date as BD
 
-from financial_planner import Bank, BankYaml
-from financial_planner.cli import create_simulation
+from financial_planner import Bank
 
 class FakeAccount():
     name = 'fake'
@@ -23,13 +22,3 @@ def test_transaction_log():
     bank = Bank([FakeAccount()])
     bank.process_date('a')
     assert(len(bank.transaction_log) == 1)
-
-def test_yaml():
-    sim = create_simulation("""accounts:
-- name: HSA
-  interest_rate: 0.07
-  balance: 50000.00
-""")
-    assert(sim.bank.accounts[0].balance == Decimal("50000.00"))
-    sim.bank.mature(BD.D.today() + (1 * BD.days))
-    assert(sim.bank.accounts[0].balance > Decimal("50000.00"))
