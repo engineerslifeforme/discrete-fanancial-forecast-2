@@ -3,6 +3,7 @@
 *.csv
 *.yaml
 *.yml
+!cli/example.yml
 *.ipynb
 .vscode
 *results

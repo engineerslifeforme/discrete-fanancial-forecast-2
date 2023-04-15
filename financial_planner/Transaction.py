@@ -137,6 +137,7 @@ class YearlyTransaction(MonthlyTransaction):
 
 TRANSACTION_MAP = {Transaction.subtype: Transaction for Transaction in [
     DailyTransaction,
+    WeeklyTransaction,
     BiWeeklyTransaction,
     MonthlyTransaction,
     YearlyTransaction,
