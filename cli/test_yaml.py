@@ -30,14 +30,14 @@ def test_create_bank():
     
 
 def test_create_account():
-    account = create_account(load_yaml("""name: a"""), Account)
+    account = create_account(load_yaml("""name: a"""), Account, {})
     assert(len(account.transactions) == 0)
     account = create_account(load_yaml("""name: a
 transactions:
     income:
         monthly:
             - name: a
-              amount: 10.00"""), Account)
+              amount: 10.00"""), Account, {})
     assert(len(account.transactions) == 1)
     assert(type(account.transactions[0]) == MonthlyTransaction)
 
@@ -51,7 +51,9 @@ def test_transfers():
               amount: 10.00
               source: a"""))
     assert(len(bank.accounts[0].transactions) == 1)
+    assert(type(bank.accounts[0].transactions[0]) == MonthlyTransaction)
     assert(len(bank.accounts[1].transactions) == 1)
+    assert(type(bank.accounts[1].transactions[0]) == MonthlyTransaction)
 
 def test_mortgage():
     bank = create_bank(load_yaml("""accounts:
@@ -64,7 +66,9 @@ mortgages:
     interest_rate: 0.0299
     paid_from: a"""))
     assert(len(bank.accounts[0].transactions) == 1)
+    assert(type(bank.accounts[0].transactions[0]) == MonthlyTransaction)
     assert(len(bank.accounts[1].transactions) == 1)
+    assert(type(bank.accounts[1].transactions[0]) == MonthlyTransaction)
 
 class TestExternalTransactions:
 
