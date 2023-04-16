@@ -7,6 +7,8 @@ from financial_planner import (
     RetirementAccount,
     MonthlyTransaction,
     YearlyTransaction,
+    MortgagePaymentTransaction,
+    MortgagePrincipal,
 )
 
 from yaml_support import (
@@ -66,9 +68,9 @@ mortgages:
     interest_rate: 0.0299
     paid_from: a"""))
     assert(len(bank.accounts[0].transactions) == 1)
-    assert(type(bank.accounts[0].transactions[0]) == MonthlyTransaction)
+    assert(type(bank.accounts[0].transactions[0]) == MortgagePaymentTransaction)
     assert(len(bank.accounts[1].transactions) == 1)
-    assert(type(bank.accounts[1].transactions[0]) == MonthlyTransaction)
+    assert(type(bank.accounts[1].transactions[0]) == MortgagePrincipal)
 
 class TestExternalTransactions:
 
@@ -88,6 +90,6 @@ Activity,850.00,yearly""")
         account = create_account(load_yaml(f"""name: a
 external_transactions:
     - path: {self.external_path}
-      income_or_expense: expense"""), Account)
+      income_or_expense: expense"""), Account, {})
         assert(len(account.transactions) == 5)
         assert(type(account.transactions[0]) == YearlyTransaction)

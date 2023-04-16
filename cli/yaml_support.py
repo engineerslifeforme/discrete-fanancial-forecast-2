@@ -53,6 +53,8 @@ def create_mortgage(data: dict, account_map: dict) -> Account:
     return mortgage
 
 def make_transactions(data: dict) -> TransactionPrototype:
+    if not data.pop('income_or_expense', 'income') == 'income':
+        data['amount'] = Decimal(data['amount']) * NEGATIVE_ONE        
     Transaction = TRANSACTION_MAP[data.pop('frequency_label')]
     return Transaction(**data)
 
@@ -63,8 +65,6 @@ def create_account(data: dict, AccountType: object, account_map: dict) -> Accoun
     transactions_data_list.extend(process_transfers(data.pop('transfers', {}), account_map))
     transactions = []
     for data_entry in transactions_data_list:
-        if not data_entry.pop('income_or_expense', 'income') == 'income':
-            data_entry['amount'] = Decimal(data_entry['amount']) * NEGATIVE_ONE        
         transactions.append(
             make_transactions(data_entry)    
         )
@@ -89,7 +89,7 @@ def process_transactions(data: dict, account_map: dict = None) -> list:
                 if source is not None:
                     entry_copy = copy.deepcopy(entry)
                     entry_copy['amount'] = Decimal(entry_copy['amount']) * NEGATIVE_ONE
-                    account_map[source].transactions.append(entry)
+                    account_map[source].transactions.append(make_transactions(entry_copy))
     return transactions
 
 
