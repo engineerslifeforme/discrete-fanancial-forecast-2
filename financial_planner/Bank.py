@@ -26,6 +26,9 @@ class Bank:
     @property
     def account_map(self) -> dict:
         return {account.name: account for account in self.accounts}
+    
+    def get_year_balance(self, year: int) -> Decimal:
+        return sum([a.year_balance for a in self.accounts if a.year == year])
 
     def to_dict(self) -> dict:
         return {
@@ -38,31 +41,14 @@ class Bank:
             self.capture_state(date)
         for account in self.accounts:
             change_in_value = account.calculate_interest(DateUnit.DAYS)
-            account.balance += change_in_value
-            self.transaction_log.append(TransactionLog(
-                None,
-                account.name,
-                'interest',
+            self.transaction_log.append(account.execute_transaction(
                 change_in_value,
+                'interest',
+                account.name,
                 date,
+                taxable_income=False,
             ))
         self.capture_state(date)
-
-    # def mature(self, periods: int, period_unit: DateUnit):
-    #     date_increment = get_date_increment(period_unit)
-    #     for _ in range(periods):
-    #         self.date += date_increment
-    #         for account in self.accounts:
-    #             change_in_value = account.calculate_interest(period_unit)
-    #             transaction = TransactionLog(
-    #                 'interest',
-    #                 account.name,
-    #                 change_in_value,
-    #                 self.date,
-    #             )
-    #             self.transaction_log.append(transaction)
-    #             account.balance += change_in_value
-    #         self.state_log.extend(self.capture_state())
 
     def find_next_account(self, exclude: Account = None) -> Account:
         for account in self.accounts:
@@ -140,7 +126,7 @@ class Bank:
         } for account in self.accounts])
 
     def create_mortgage(self, name: str = None, paid_from: Account = None, loan_amount: Decimal = None, remaining_balance: Decimal = None, terms: int = None, **kwargs) -> None:
-        loan = Mortgage(name=name, balance=(Decimal("-1") * Decimal(remaining_balance)))
+        loan = Mortgage(name=name, balance=(Decimal("-1.00") * Decimal(remaining_balance)))
         self.accounts.append(loan)
         loan.transactions.append(MortgagePrincipal(
             loan_amount, 

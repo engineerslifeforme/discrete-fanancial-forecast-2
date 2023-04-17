@@ -21,7 +21,7 @@ class TaxRatePrototype:
             'type': self.tax_type,
         }
 
-class ConstantTaxRate:
+class ConstantTaxRate(TaxRatePrototype):
     tax_type = 'constant'
 
     def __init__(self, rate: str = "0.00"):
@@ -60,9 +60,13 @@ TAX_BRACKETS = [
 class IncomeTaxRate(ConstantTaxRate):
     tax_type = 'income'
 
-    def __init__(self):
-        self.balance = ZERO
+    def __init__(self, bank):
+        self.bank = bank
         self.year = None
+
+    @property
+    def balance(self) -> Decimal:
+        return self.bank.get_year_balance(self.year)
 
     @property
     def rate(self) -> Decimal:
@@ -149,7 +153,6 @@ class IncomeTaxRate(ConstantTaxRate):
         if self.year is None:
             self.year = date.year
         elif date.year != self.year:
-            self.balance = ZERO
             self.year = date.year
         
         do_not_split = False
@@ -163,7 +166,6 @@ class IncomeTaxRate(ConstantTaxRate):
                 taxes += self.get_additional_taxes(untaxed_amount - initial_amount, date)
         if taxes is None:
             taxes = super().get_additional_taxes(untaxed_amount, date)
-            self.balance += untaxed_amount
         return taxes
     
     def to_dict(self) -> dict:

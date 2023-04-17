@@ -39,6 +39,8 @@ class Account:
             self.withdrawal_tax_rate = ConstantTaxRate()
         else:
             self.withdrawal_tax_rate = withdrawal_tax_rate
+        self.year_balance = ZERO
+        self.year = None
 
     def to_dict(self) -> dict:
         return {
@@ -80,8 +82,15 @@ class Account:
             
         return transaction_list
 
-    def execute_transaction(self, amount: Decimal, description: str, destination: str, date: BD.BeautifulDate, source: str = None) -> TransactionLog:
+    def execute_transaction(self, amount: Decimal, description: str, destination: str, date: BD.BeautifulDate, source: str = None, taxable_income: bool = True) -> TransactionLog:
         self.balance += amount
+        if amount > ZERO and taxable_income:
+            if self.year is None:
+                self.year = date.year
+            elif self.year != date.year:
+                self.year = date.year
+                self.year_balance = ZERO
+            self.year_balance += amount
         return TransactionLog(
             source,
             destination,
