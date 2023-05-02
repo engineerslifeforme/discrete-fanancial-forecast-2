@@ -41,13 +41,16 @@ class Bank:
             self.capture_state(date)
         for account in self.accounts:
             change_in_value = account.calculate_interest(DateUnit.DAYS)
-            self.transaction_log.append(account.execute_transaction(
+            interest_log = account.execute_transaction(
                 change_in_value,
                 'interest',
                 account.name,
                 date,
                 taxable_income=False,
-            ))
+            )
+            if interest_log.amount == ZERO:
+                continue
+            self.transaction_log.append(interest_log)
         self.capture_state(date)
 
     def find_next_account(self, exclude: Account = None) -> Account:
