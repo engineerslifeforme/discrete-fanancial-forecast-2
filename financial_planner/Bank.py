@@ -46,7 +46,7 @@ class Bank:
                 'interest',
                 account.name,
                 date,
-                taxable_income=False,
+                taxable_income=account.taxable_interest,
             )
             if interest_log.amount == ZERO:
                 continue

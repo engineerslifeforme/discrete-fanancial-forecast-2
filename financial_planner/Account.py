@@ -22,6 +22,7 @@ class Account:
             balance = ZERO, 
             transactions: list = None, 
             allow_auto_withdrawl: bool = True,
+            taxable_interest: bool = False,
             withdrawal_tax_rate: TaxRatePrototype = None) -> None:
         assert(name is not None), "All accounts must have a name!"
         self.name = name
@@ -41,6 +42,7 @@ class Account:
             self.withdrawal_tax_rate = withdrawal_tax_rate
         self.year_balance = ZERO
         self.year = None
+        self.taxable_interest = taxable_interest
 
     def to_dict(self) -> dict:
         return {
